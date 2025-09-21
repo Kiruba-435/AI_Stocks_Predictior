@@ -3,6 +3,3 @@ yfinance
 pandas
 numpy
 plotly
-request
-datetime 
-json
