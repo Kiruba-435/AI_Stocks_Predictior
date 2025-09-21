@@ -37,7 +37,12 @@ def validate_api_key(key):
         client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": "Test"}],
-            max_tokens=10
+            max_tokens=10,
+            extra_headers={
+                # Required for free models on OpenRouter
+                "HTTP-Referer": "http://localhost:8501",
+                "X-Title": "Stock Price Predictor",
+            }
         )
         return True, "API Key validated successfully!"
     except AuthenticationError:
@@ -125,7 +130,7 @@ def get_ai_analysis(stock_data, fundamentals, technical_indicators, ticker):
         completion = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=500,
+            max_tokens=1000,
             temperature=0.7,
             extra_headers={
                 "HTTP-Referer": "localhost:8501",  # Streamlit default port
