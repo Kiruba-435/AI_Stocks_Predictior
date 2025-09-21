@@ -116,6 +116,9 @@ def get_ai_analysis(stock_data, fundamentals, technical_indicators, ticker):
 
     **Recommendation:**
     - Position: [Buy/Sell/Hold]
+    - Risk Level: [Low/Medium/High]
+    - Time Horizon: [Short-term/Medium-term/Long-term]
+    - Tell buy : [reasons][yes/no]
     - Key Reasoning: [main points in bold]
     
     Keep response concise, professional, and evidence-based. Make sure to use bold markdown (**) for headers and key points.
