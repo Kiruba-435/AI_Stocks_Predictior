@@ -13,54 +13,56 @@ from pandas.tseries.offsets import BDay
 st.set_page_config(page_title="Stock Price Predictor", page_icon="📈", layout="wide")
 
 # OpenAI/OpenRouter configuration
-from openai import OpenAI
+from openai import OpenAI, AuthenticationError, APIConnectionError
 MODEL = "mistralai/mistral-7b-instruct:free"
 
 # Initialize session state for API key validation
 if 'api_key_validated' not in st.session_state:
     st.session_state.api_key_validated = False
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = None
 
 # Sidebar for API Key Configuration
 st.sidebar.title("Configuration")
 api_key = st.sidebar.text_input("Enter your OpenRouter API Key:", type="password", help="Get your API key from openrouter.ai")
 submit_api = st.sidebar.button("Submit API Key")
 
-def validate_api_key(api_key):
+def validate_api_key(key):
+    """Validates the OpenRouter API key and returns a status and message."""
     try:
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
+            api_key=key,
         )
-        completion = client.chat.completions.create(
+        client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": "Test"}],
             max_tokens=10
         )
-        return True
-    except:
-        return False
+        return True, "API Key validated successfully!"
+    except AuthenticationError:
+        return False, "Invalid OpenRouter API key. Please check and try again."
+    except APIConnectionError as e:
+        return False, f"Network error: Could not connect to OpenRouter. Details: {e.__cause__}"
+    except Exception as e:
+        return False, f"An unexpected error occurred: {e}"
 
 if submit_api:
     if not api_key:
         st.sidebar.warning("Please enter your OpenRouter API Key to use AI analysis.")
-    elif not validate_api_key(api_key):
-        st.sidebar.error("Invalid OpenRouter API key. Please check and try again.")
     else:
-        st.sidebar.success("API Key validated successfully!")
-        st.session_state.api_key_validated = True
+        is_valid, message = validate_api_key(api_key)
+        if is_valid:
+            st.session_state.api_key_validated = True
+            st.session_state.api_key = api_key  # Store the validated key
+            st.sidebar.success(message)
+        else:
+            st.session_state.api_key_validated = False
+            st.sidebar.error(message)
 
 if not st.session_state.api_key_validated:
     st.title("Stock Price Predictor")
     st.info("Enter your API key in the sidebar and click 'Submit API Key' to get started.")
-    st.stop()
-
-if not api_key:
-    st.sidebar.warning("Please enter your OpenRouter API Key to use AI analysis.")
-    st.title("Stock Price Predictor")
-    st.info("Enter your API key in the sidebar to get started.")
-    st.stop()
-elif not validate_api_key(api_key):
-    st.sidebar.error("Invalid OpenRouter API key. Please check and try again.")
     st.stop()
 
 def get_ai_analysis(stock_data, fundamentals, technical_indicators, ticker):
@@ -117,7 +119,7 @@ def get_ai_analysis(stock_data, fundamentals, technical_indicators, ticker):
     try:
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
+            api_key=st.session_state.api_key,  # Use the key from session state
         )
         
         completion = client.chat.completions.create(
